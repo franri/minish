@@ -35,8 +35,11 @@ int main( void ){
             printf("%s\n", args[count]);
         }
 
-        ejecutar(count, args);
-
+        int status = ejecutar(count, args);
+        
+        if(status != 0){
+            print error
+        }
     }
 
 }
@@ -91,4 +94,83 @@ int linea2argv( char* input, char* argv[] ){
    return count;
 }
 
+int builtin_exit( int count, char* args[] ){
+    if(count == 2){
+        return exit( atoi(args[1]) );
+    }else if(count == 1){
+        return exit();
+    }else{
+        char* text = buscar("exit").help_txt;
+        write(2, text, strlen(text));
+        return 1;
+    {
+}
 
+int builtin_getpid(int count, char* args[]){
+
+    if(count == 1){
+        printf("Process ID: %d\n", getpid());
+        return 0;
+    }else{
+        char* text = buscar("getpid").help_txt;
+        write(2, text, strlen(text));
+        return 1;
+    {
+
+}
+
+int builtin_getuid(int count, char* args[]){
+
+    if(count == 1){
+        int id = getuid();
+        char* name = getpwuid(id).pw_name;
+        printf("User ID: %d\nUsername: %s\n", id, name);
+        return 0;
+    }else{
+        char* text = buscar("getuid").help_txt;
+        write(2, text, strlen(text));
+        return 1;
+    }
+
+}
+
+int builtin_getenv( int count, char* args[]  ){
+   if(count == 1){
+        char* text = buscar("getenv").help_txt;
+        write(2, text, strlen(text));
+        return 1;
+   }else{
+        int i = 1;
+        while(args[i] != NULL){
+            char* variable = getenv(args[i]);
+            if(variable != NULL){
+                printf("%s=%s\n", args[i], variable);
+            }else{
+                printf("No existe la variable %s\n", args[i]);
+            }
+        }
+        return 0;
+   }
+}
+
+int builtin_setenv( int count, char* args[] ){
+    if(count != 3){
+        char* text = buscar("setenv").help_txt;
+        write(2, text, strlen(text));
+        return 1;
+    }else{
+        return setenv(args[1], args[2], 1);
+    }
+    
+
+}
+
+struct builtin_struct * buscar( char* cmd){
+    builtin_struct* puntero = builtin_arr;
+    while( *puntero.cmd != NULL  ){
+        if(strcmp(cmd, *puntero.cmd) == 0){
+            return puntero;
+        }
+    }
+    return NULL;
+}
