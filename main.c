@@ -19,15 +19,35 @@ struct builtin_struct builtin_arr[] = {
   { NULL, NULL, NULL }
         };
 
+int status = 0;
+char* cwd[MAX];
+
+char promptcompleto[MAXLINE];
+
+FILE* log;
+
 int main( void ){
-    char* prompt = "minish> ";
+
     char* input[MAXLINE];
     char* args[MAXARG];
     int count = 0;
-    
+
+    getcwd( cwd, MAXLINE  );
+
+    snprintf( promptcompleto, MAXLINE, "minish %s > ", cwd );
+
+    char* rutaLog[MAXLINE];
+    snprintf(rutaLog, MAXLINE, "%s/.minish_history", getenv("HOME"));
+ 
+    log = fopen(rutaLog, "a");
+    if (!log) log = fopen(rutaLog, "w");
+
     while(1){
-        write(2, prompt, strlen(prompt));
+
+        write(2, promptcompleto, strlen(promptcompleto));
         read( 0, input, MAXLINE );
+        
+        fprintf( log, "%s\n", input);
 
         count = linea2argv(input, args);
        
@@ -35,7 +55,7 @@ int main( void ){
             printf("%s\n", args[count]);
         }
 
-        int status = ejecutar(count, args);
+        status = ejecutar(count, args);
         
         if(status != 0){
             print error
@@ -48,25 +68,51 @@ int ejecutar( int count, char* args[] ){
     if( isInterno(args[0]) ){
         return builtin(count, args);
     }else{
-        return 
+        return externo 
     }
 
 }
 
 int builtin( int count, char* args[]  ){
-    for(int i=0, i<10, i++){
+    struct builtin_struct * pointer = builtin_arr;
+    while( pointer->cmd != NULL ){
         if(strcmp(args[0], builtin_arr[i].cmd)){
-            return builtin_arr[i].func(count, args);
+            return pointer->func(count, args);
         }
+        pointer++;
     }
+    return NULL;
+}
+
+int builtin_history( int count, char* args[]){
+    switch(count){
+        case 1:
+
+        break;
+        case 2:
+
+        break;
+        default:
+            char* text = buscar("history").help_txt;
+            write(2, text, strlen(text));
+            return 1;
+        break;
+
+
+
+
+    }
+
 }
 
 int isInterno( char* comando ){
-    for(int i=0, i<10, i++){
-        if(strcmp(comando, builtin_arr[i].cmd)){
+    struct builtin_struct * pointer = builtin_arr;
+    while( pointer->cmd != NULL ){
+        if(strcmp(args[0], builtin_arr[i].cmd)){
             return 1;
         }
-    }    
+        pointer++;
+    }
     return 0;
 }
 
@@ -105,6 +151,41 @@ int builtin_exit( int count, char* args[] ){
         return 1;
     {
 }
+
+int builtin_status( int count, char* args[]  ){
+    if (count != 1){
+        char* text = buscar("status").help_txt;
+        write(2, text, strlen(text));
+        return 1;
+    }else{
+        printf("Estado del último comando ejecutado: %d\n", status);
+        return 0;
+    }
+}
+
+int builtin_help( int count, char* args[]){
+    switch(count){
+        case 1:
+           printf((*buscar("help")).help_txt); 
+        break;
+        case 2:
+            struct builtin_struct * pointer = buscar(args[1]);
+            if(pointer == NULL){
+                printf("No existe esa función. Escriba help para ver las disponibles.\n");
+            }else{
+                printf(pointer->help_txt);
+            }
+        break;
+        default:
+            printf("Help no admite esa cantidad de argumentos.\n");        
+            return 1;
+        break;
+        }
+    return 0;
+    }
+}
+
+
 
 int builtin_getpid(int count, char* args[]){
 
@@ -161,9 +242,89 @@ int builtin_setenv( int count, char* args[] ){
     }else{
         return setenv(args[1], args[2], 1);
     }
+}
+
+int builtin_cd( int count, char* args[] ){
+    switch(count){
+        case 1:
+            char* home = getenv("HOME");
+            int estado = chdir(home);
+
+            getcwd( cwd, MAXLINE  );
+
+            strcpy(promptcompleto, prompti);
+            strcat(promptcompleto, cwd);
+            strcat(promptcompleto, promptf);
+
+            return 0;
+        break;
+        case 2:
+            int estado = chdir(args[1]);
+            if(estado == -1){
+                int number = errno;
+                printf( "Error en cd al cambiar a '%s': %s", args[1], strerror(number));
+                return number;
+                }else{
+                    char* olddir = cwd;
+                    cwd = getcwd();
     
+                    strcpy(promptcompleto, prompti);
+                    strcat(promptcompleto, cwd);
+                    strcat(promptcompleto, promptf);
+
+                    return 0;
+                }
+        break;
+        default:
+            struct builtin_struct nodoCd = &buscar("cd");
+            printf("%s", nodoCd.help_txt);
+            return 1;
+        break;
+    }
 
 }
+
+int builtin_dir(int count, char* args[] ){
+    
+    switch(count){
+    case 1:
+        dirent* elemento;
+        errno = 0;
+        while( (elemento = readdir()) != NULL && errno == 0 ){
+           printf( elemento.d_name );
+        }
+        if( errno != 0){
+            printf("Error en dir: %s/n", strerror(errno));
+            return errno;
+        }
+        return 0;
+        break;
+    case 2:
+        dirent* elemento;
+        errno = 0;
+        char* word;
+        while( (elemento = readdir()) != NULL && errno == 0 ){
+           word = elemento.d_name;
+           if(strstr(word, args[1])!=NULL){
+            printf( word );
+           }
+        }
+        if( errno != 0){
+            printf("Error en dir: %s/n", strerror(errno));
+            return errno;
+        }
+        return 0;
+        break;
+    default:
+        struct builtin_struct nodoCd = &buscar("dir");
+        printf("%s", nodoCd.help_txt);
+        return 1;
+        break;
+    }
+}   
+
+
+
 
 struct builtin_struct * buscar( char* cmd){
     builtin_struct* puntero = builtin_arr;
