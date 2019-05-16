@@ -85,11 +85,50 @@ int builtin( int count, char* args[]  ){
 }
 
 int builtin_history( int count, char* args[]){
+
+    char* rutaLog[MAXLINE];
+    snprintf(rutaLog, MAXLINE, "%s/.minish_history", getenv("HOME"));
+
+    
     switch(count){
         case 1:
-
-        break;
         case 2:
+            int qItems = (count == 1) 10 : atoi(args[1]);
+            char* items[qItems];
+            char* line = malloc(MAXLINE);
+            
+            FILE* historial = fopen ( rutaLog, "r" );
+            //voy a llenarlo circulamente e imprimir de mas viejo a mas nuevo
+
+            int current = 0;
+
+            while( fgets( line, MAXLINE, historial ) != NULL){
+                items[current++] = line;
+                current = (current > qItems-1) 0 : current; //vuelvo al comienzo si me paso 
+            }
+
+            //ahora imprimo
+            //primero chequeo si hay suficientes comandos en historial
+            if(manyCommands(items)){
+                int toPrint = current;
+                toPrint++;
+                while(current!=toPrint){
+                    printf(items[toPrint++]);
+                    toPrint = (toPrint > qItems-1) 0 : toPrint; //vuelvo al comienzo si me paso 
+                }
+                free(line);
+                fclose(historial);
+                return 0;
+            }else{//hay pocos comandos
+                char* currentCommand = items;
+                while(*currentCommand != NULL){
+                    printf(currentCommand);
+                    currentCommand++;
+                }
+                free(line);
+                fclose(historial);
+                return 0;
+            }
 
         break;
         default:
@@ -97,10 +136,6 @@ int builtin_history( int count, char* args[]){
             write(2, text, strlen(text));
             return 1;
         break;
-
-
-
-
     }
 
 }
