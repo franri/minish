@@ -37,24 +37,24 @@ struct builtin_struct {         // struct con información de los builtins
 };
 
 extern struct builtin_struct builtin_arr[];
-    /*
-        builtin_arr es una lista de los builtins, que se recorrerá en forma lineal.
-        Podría usarse una estructura que mejorara la velocidad de búsqueda, pero
-        en este ejercicio una lista que se recorre en forma lineal es suficiente.
-        Deberá definirse e inicializarse como variable global, de esta manera:
+/*
+    builtin_arr es una lista de los builtins, que se recorrerá en forma lineal.
+    Podría usarse una estructura que mejorara la velocidad de búsqueda, pero
+    en este ejercicio una lista que se recorre en forma lineal es suficiente.
+    Deberá definirse e inicializarse como variable global, de esta manera:
 
-        struct builtin_struct builtin_arr[] = {
-            { "cd", builtin_cd, HELP_CD },
-            .... etc. etc.
-            { "uid", builtin_uid, HELP_UID },
-            { NULL, NULL, NULL }
-        };
+    struct builtin_struct builtin_arr[] = {
+        { "cd", builtin_cd, HELP_CD },
+        .... etc. etc.
+        { "uid", builtin_uid, HELP_UID },
+        { NULL, NULL, NULL }
+    };
 
-        La definición no puede hacerse en este archivo minish.h porque está pensado
-        para ser incluido en todos los fuentes y no se puede definir el mismo array en
-        diferentes fuentes de un mismo programa.
+    La definición no puede hacerse en este archivo minish.h porque está pensado
+    para ser incluido en todos los fuentes y no se puede definir el mismo array en
+    diferentes fuentes de un mismo programa.
 
-    */
+*/
 
 /*
     La siguiente lista de constantes de texto puede adaptarse/mejorarse, se pone como ejemplo.
