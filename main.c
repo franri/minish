@@ -7,21 +7,8 @@
 
 #define MAXARG 100
 
-struct builtin_struct * buscar( char* cmd);
 
-struct builtin_struct builtin_arr[] = {
-    { "exit", builtin_exit, HELP_EXIT },
-    { "pid", builtin_pid, HELP_PID },
-    { "uid", builtin_uid, HELP_UID },
-    { "getenv", builtin_getenv, HELP_GETENV },
-    { "setenv", builtin_setenv, HELP_SETENV },
-    { "cd", builtin_cd, HELP_CD },
-    { "status", builtin_status, HELP_STATUS },
-    { "help", builtin_help, HELP_HELP },
-    { "dir", builtin_dir, HELP_DIR },
-    { "history", builtin_history, HELP_HISTORY },
-    { NULL, NULL, NULL }
-};
+struct builtin_struct * buscar( char* cmd);
 
 int status = 0;
 char cwd[MAXBUF];
@@ -31,131 +18,6 @@ char promptcompleto[MAXBUF];
 int builtin( int, char** );
 int ejecutar( int, char** );
 int isInterno( char* );
-
-int main( void ) {
-
-    char input[MAXBUF];
-    char* args[MAXARG];
-    int count = 0;
-
-    getcwd( cwd, MAXBUF);
-
-    snprintf( promptcompleto, MAXBUF, "minish %s > ", cwd );
-
-    char rutaLog[MAXBUF];
-    snprintf(rutaLog, MAXBUF, "%s/.minish_history", getenv("HOME"));
-
-    FILE* log = fopen(rutaLog, "a");
-    if (!log) log = fopen(rutaLog, "w");
-
-
-    while(1) {
-
-        write(2, promptcompleto, strlen(promptcompleto));
-        read( 0, input, MAXBUF );
-
-        fprintf( log, "%s\n", input);
-
-        count = linea2argv(input, args);
-
-        printf("Cantidad de argumentos: %d\n", count);
-
-        int pepe = count;
-
-        while(pepe-->0) {
-            printf("%s\n", args[pepe]);
-        }
-        printf("listo\n");
-
-        status = ejecutar(count, args);
-
-        if(status != 0) {
-            int number = errno;
-            printf( "Error al ejecutar: %s\n", strerror(number));
-        }
-    }
-    return 0;
-}
-
-int ejecutar( int count, char* args[] ) {
-    if( isInterno(args[0]) ) {
-        printf("%s es interno\n", args[0]);
-        return builtin(count, args);
-    } else {
-        int id = fork();
-        if(id==0) {
-            execv( args[0], args );
-        } else if(id>0) {
-            printf("Comando externo forkeado\n");
-            return 0;
-        } else if(id<0) {
-            int number = errno;
-            printf( "Error al forkear: %s\n", strerror(number));
-        }
-        return 0;
-    }
-
-}
-
-int isInterno( char* comando ) {
-    struct builtin_struct * pointer = builtin_arr;
-    while( pointer->cmd != NULL ) {
-        if(strcmp(comando, pointer->cmd)==0) {
-            return 1;
-        }
-        pointer++;
-    }
-    return 0;
-}
-
-int builtin( int count, char* args[]  ) {
-    struct builtin_struct * pointer = builtin_arr;
-    printf("afuera del while\n");
-    while( pointer->cmd != NULL ) {
-        if(strcmp(args[0], pointer->cmd)==0) {
-            printf("encontramos la funcion je de nombre %s\n", pointer->cmd);
-            return pointer->func(count, args);
-        }
-        printf("esta funcion no es\n");
-        pointer++;
-    }
-    return 4;
-}
-
-
-struct builtin_struct * buscar( char* cmd) {
-    struct builtin_struct* puntero = builtin_arr;
-    while( puntero->cmd != NULL  ) {
-        if(strcmp(cmd, puntero->cmd) == 0) {
-            return puntero;
-        }
-    }
-    return NULL;
-}
-
-int linea2argv( char* input, char* argv[] ) {
-    int count = 0;
-    char* punteroAComienzo = input;
-    char* iterator = input;
-
-
-
-    while( *iterator != '\n' && *iterator != '\0' ) {
-        if(*iterator != ' ' && *iterator != '\t') {
-            iterator++;
-        }
-        if( *iterator == ' ' || *iterator == '\t' || *iterator == '\n' ) {
-            *iterator = '\0';
-            argv[count] = punteroAComienzo;
-            punteroAComienzo = iterator + 1;
-            count++;
-            iterator++;
-        }
-    }
-
-    argv[count] = NULL;
-    return count;
-}
 
 int builtin_exit( int count, char* args[] ) {
     if(count == 2) {
@@ -182,6 +44,7 @@ int builtin_status( int count, char* args[]  ) {
 }
 
 int builtin_help( int count, char* args[]) {
+    printf("tamo ac[a");
     if(count==1) {
         printf("%s\n", buscar("help")->help_txt);
     } else if(count==2) {
@@ -291,6 +154,7 @@ int builtin_cd( int count, char* args[] ) {
             return 0;
         }
     } else {
+        printf("llegamos");
         struct builtin_struct * nodoCd = buscar("cd");
         printf("%s", nodoCd->help_txt);
         return 1;
@@ -389,3 +253,146 @@ int builtin_history( int count, char* args[]) {
     break;
     }
 }
+
+struct builtin_struct builtin_arr[] = {
+    { "exit", builtin_exit, HELP_EXIT },
+    { "pid", builtin_pid, HELP_PID },
+    { "uid", builtin_uid, HELP_UID },
+    { "getenv", builtin_getenv, HELP_GETENV },
+    { "setenv", builtin_setenv, HELP_SETENV },
+    { "cd", builtin_cd, HELP_CD },
+    { "status", builtin_status, HELP_STATUS },
+    { "help", builtin_help, HELP_HELP },
+    { "dir", builtin_dir, HELP_DIR },
+    { "history", builtin_history, HELP_HISTORY },
+    { NULL, NULL, NULL }
+};
+
+
+int main( void ) {
+
+    char input[MAXBUF];
+    char* args[MAXARG];
+    int count = 0;
+
+    getcwd( cwd, MAXBUF);
+
+    snprintf( promptcompleto, MAXBUF, "minish %s > ", cwd );
+
+    char rutaLog[MAXBUF];
+    snprintf(rutaLog, MAXBUF, "%s/.minish_history", getenv("HOME"));
+
+    FILE* log = fopen(rutaLog, "a");
+    if (!log) log = fopen(rutaLog, "w");
+
+
+    while(1) {
+
+        write(2, promptcompleto, strlen(promptcompleto));
+        read( 0, input, MAXBUF );
+
+        fprintf( log, "%s\n", input);
+
+        count = linea2argv(input, args);
+
+        printf("Cantidad de argumentos: %d\n", count);
+
+        int pepe = count;
+
+        while(pepe-->0) {
+            printf("%s\n", args[pepe]);
+        }
+        printf("listo\n");
+
+        status = ejecutar(count, args);
+
+        if(status != 0) {
+            int number = errno;
+            printf( "Error al ejecutar: %s\n", strerror(number));
+        }
+    }
+    return 0;
+}
+
+int ejecutar( int count, char* args[] ) {
+    if( isInterno(args[0]) ) {
+        printf("%s es interno\n", args[0]);
+        return builtin(count, args);
+    } else {
+        int id = fork();
+        if(id==0) {
+            execv( args[0], args );
+        } else if(id>0) {
+            printf("Comando externo forkeado\n");
+            return 0;
+        } else if(id<0) {
+            int number = errno;
+            printf( "Error al forkear: %s\n", strerror(number));
+        }
+        return 0;
+    }
+
+}
+
+int isInterno( char* comando ) {
+    struct builtin_struct * pointer = builtin_arr;
+    while( pointer->cmd != NULL ) {
+        if(strcmp(comando, pointer->cmd)==0) {
+            return 1;
+        }
+        pointer++;
+    }
+    return 0;
+}
+
+int builtin( int count, char* args[]  ) {
+    struct builtin_struct * pointer = builtin_arr;
+    printf("afuera del while\n");
+    while( pointer->cmd != NULL ) {
+        if(strcmp(args[0], pointer->cmd)==0) {
+            printf("encontramos la funcion je de nombre %s\n", pointer->cmd);
+            int resultado = (pointer->func)(count, args);
+            printf("aca fue corrida, resultado %d\n", resultado);
+            return resultado;
+        }
+        printf("esta funcion no es\n");
+        pointer++;
+    }
+    return 4;
+}
+
+
+struct builtin_struct * buscar( char* cmd) {
+    struct builtin_struct* puntero = builtin_arr;
+    while( puntero->cmd != NULL  ) {
+        if(strcmp(cmd, puntero->cmd) == 0) {
+            return puntero;
+        }
+    }
+    return NULL;
+}
+
+int linea2argv( char* input, char* argv[] ) {
+    int count = 0;
+    char* punteroAComienzo = input;
+    char* iterator = input;
+
+
+
+    while( *iterator != '\n' && *iterator != '\0' ) {
+        if(*iterator != ' ' && *iterator != '\t') {
+            iterator++;
+        }
+        if( *iterator == ' ' || *iterator == '\t' || *iterator == '\n' ) {
+            *iterator = '\0';
+            argv[count] = punteroAComienzo;
+            punteroAComienzo = iterator + 1;
+            count++;
+            iterator++;
+        }
+    }
+
+    argv[count] = NULL;
+    return count;
+}
+
