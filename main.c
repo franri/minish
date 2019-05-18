@@ -44,7 +44,7 @@ int builtin_status( int count, char* args[]  ) {
 }
 
 int builtin_help( int count, char* args[]) {
-    printf("tamo ac[a");
+    printf("tamo aca");
     if(count==1) {
         printf("%s\n", buscar("help")->help_txt);
     } else if(count==2) {
@@ -70,7 +70,7 @@ int builtin_pid(int count, char* args[]) {
         printf("Process ID: %d\n", getpid());
         return 0;
     } else {
-        char* text = buscar("getpid")->help_txt;
+        char* text = buscar("pid")->help_txt;
         write(2, text, strlen(text));
         return 1;
     }
@@ -85,7 +85,7 @@ int builtin_uid(int count, char* args[]) {
         printf("User ID: %d\nUsername: %s\n", id, name);
         return 0;
     } else {
-        char* text = buscar("getuid")->help_txt;
+        char* text = buscar("uid")->help_txt;
         write(2, text, strlen(text));
         return 1;
     }
@@ -200,9 +200,14 @@ int builtin_history( int count, char* args[]) {
     char rutaLog[MAXBUF];
     snprintf(rutaLog, MAXBUF, "%s/.minish_history", getenv("HOME"));
 
+    
+    int qItems;
+    if(count == 1){
+        qItems = 10;
+    }else{
+        qItems = atoi(args[1]);
+    }
 
-    int parsedNumber = atoi(args[1]);
-    int qItems = (count == 1)? 10 : parsedNumber;
     char* items[qItems];
     char* line = malloc(MAXBUF);
     FILE* historial = fopen ( rutaLog, "r" );
@@ -218,21 +223,24 @@ int builtin_history( int count, char* args[]) {
 
 
         while( fgets( line, MAXBUF, historial ) != NULL) {
-            items[current++] = line;
-            if(current > qItems-1) {
+            items[current] = line;
+            if(current >= qItems-1) {
                 current = 0;
                 isFull = 1;
-            } //vuelvo al comienzo si me paso
+            }else{
+                current++;
+            }
+            //vuelvo al comienzo si me paso
         }
 
         //ahora imprimo
         //primero chequeo si hay suficientes comandos en historial
         if(isFull) {
-            int toPrint = current+1;
-            while(current!=toPrint) {
-                printf("%s\n", items[toPrint++]);
-                toPrint = (toPrint > qItems-1)? 0 : toPrint; //vuelvo al comienzo si me paso
-            }
+            int toPrint = current;
+            do {
+                printf("%s\n", items[toPrint]);
+                toPrint = (toPrint >= qItems-1)? 0 : toPrint+1; //vuelvo al comienzo si me paso
+            }while(current!=toPrint);
             estado = 0;
         } else { //hay pocos comandos
             int i = 0;
@@ -252,6 +260,11 @@ int builtin_history( int count, char* args[]) {
     }
     break;
     }
+}
+
+int printalgo( int count, char** coso  ){
+    printf("entre");
+    return 0;
 }
 
 struct builtin_struct builtin_arr[] = {
@@ -347,11 +360,12 @@ int isInterno( char* comando ) {
 
 int builtin( int count, char* args[]  ) {
     struct builtin_struct * pointer = builtin_arr;
+    int resultado;
     printf("afuera del while\n");
     while( pointer->cmd != NULL ) {
         if(strcmp(args[0], pointer->cmd)==0) {
-            printf("encontramos la funcion je de nombre %s\n", pointer->cmd);
-            int resultado = (pointer->func)(count, args);
+            printf("encontramos la funcion de nombre %s\n", pointer->cmd);
+            resultado = (pointer->func)(count, args);
             printf("aca fue corrida, resultado %d\n", resultado);
             return resultado;
         }
