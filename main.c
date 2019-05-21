@@ -14,7 +14,6 @@ int status = 0;
 char cwd[MAXBUF];
 char promptcompleto[MAXBUF];
 
-
 int builtin( int, char** );
 int ejecutar( int, char** );
 int isInterno( char* );
@@ -25,8 +24,9 @@ int builtin_exit( int count, char* args[] ) {
     } else if(count == 1) {
         exit(0);
     } else {
-        char* text = buscar("exit")->help_txt;
-        write(2, text, strlen(text));
+        struct builtin_struct * nodo = buscar("exit");
+        char* text = nodo->help_txt;
+        printf("%s\n", text);
         return 1;
 
     }
@@ -34,8 +34,9 @@ int builtin_exit( int count, char* args[] ) {
 
 int builtin_status( int count, char* args[]  ) {
     if (count != 1) {
-        char* text = buscar("status")->help_txt;
-        write(2, text, strlen(text));
+        struct builtin_struct * nodo = buscar("status");
+        char* text = nodo->help_txt;
+        printf("%s\n", text);
         return 1;
     } else {
         printf("Estado del último comando ejecutado: %d\n", status);
@@ -44,15 +45,18 @@ int builtin_status( int count, char* args[]  ) {
 }
 
 int builtin_help( int count, char* args[]) {
-    printf("tamo aca");
     if(count==1) {
-        printf("%s\n", buscar("help")->help_txt);
+        struct builtin_struct * nodo = buscar("help");
+        printf("%s\n", nodo->help_txt);
+        return 0;
     } else if(count==2) {
         struct builtin_struct * pointer = buscar(args[1]);
         if(pointer == NULL) {
             printf("No existe esa función. Escriba help para ver las disponibles.\n");
+            return 1;
         } else {
             printf("%s\n", pointer->help_txt);
+            return 1;
         }
     } else {
         printf("Help no admite esa cantidad de argumentos.\n");
@@ -70,8 +74,9 @@ int builtin_pid(int count, char* args[]) {
         printf("Process ID: %d\n", getpid());
         return 0;
     } else {
-        char* text = buscar("pid")->help_txt;
-        write(2, text, strlen(text));
+        struct builtin_struct * nodo = buscar("pid");
+        char* text = nodo->help_txt;
+        printf("%s\n", text);
         return 1;
     }
 
@@ -85,8 +90,9 @@ int builtin_uid(int count, char* args[]) {
         printf("User ID: %d\nUsername: %s\n", id, name);
         return 0;
     } else {
-        char* text = buscar("uid")->help_txt;
-        write(2, text, strlen(text));
+        struct builtin_struct * nodo = buscar("uid");
+        char* text = nodo->help_txt;
+        printf("%s\n", text);
         return 1;
     }
 
@@ -94,8 +100,9 @@ int builtin_uid(int count, char* args[]) {
 
 int builtin_getenv( int count, char* args[]  ) {
     if(count == 1) {
-        char* text = buscar("getenv")->help_txt;
-        write(2, text, strlen(text));
+        struct builtin_struct * nodo = buscar("getenv");
+        char* text = nodo->help_txt;
+        printf("%s\n", text);
         return 1;
     } else {
         int i = 1;
@@ -106,6 +113,7 @@ int builtin_getenv( int count, char* args[]  ) {
             } else {
                 printf("No existe la variable %s\n", args[i]);
             }
+            i++;
         }
         return 0;
     }
@@ -113,8 +121,9 @@ int builtin_getenv( int count, char* args[]  ) {
 
 int builtin_setenv( int count, char* args[] ) {
     if(count != 3) {
-        char* text = buscar("setenv")->help_txt;
-        write(2, text, strlen(text));
+        struct builtin_struct * nodo = buscar("setenv");
+        char* text = nodo->help_txt;
+        printf("%s\n", text);
         return 1;
     } else {
         return setenv(args[1], args[2], 1);
@@ -134,7 +143,7 @@ int builtin_cd( int count, char* args[] ) {
             getcwd( cwd, MAXBUF);
 
             snprintf( promptcompleto, MAXBUF, "minish %s > ", cwd );
-
+            setbuf(stdout,NULL);
 
             return 0;
         }
@@ -147,25 +156,21 @@ int builtin_cd( int count, char* args[] ) {
             return number;
         } else {
             getcwd( cwd, MAXBUF);
-
             snprintf( promptcompleto, MAXBUF, "minish %s > ", cwd );
-
-
+            setbuf(stdout,NULL);
             return 0;
         }
     } else {
-        printf("llegamos");
-        struct builtin_struct * nodoCd = buscar("cd");
-        printf("%s", nodoCd->help_txt);
+        struct builtin_struct * nodo = buscar("cd");
+        printf("%s", nodo->help_txt);
         return 1;
     }
 }
 
 int builtin_dir(int count, char* args[] ) {
-
     if(count!=1 && count!=2) {
-        struct builtin_struct *  nodoCd = buscar("dir");
-        printf("%s", nodoCd->help_txt);
+        struct builtin_struct *  nodo = buscar("dir");
+        printf("%s", nodo->help_txt);
         return 1;
     } else {
         DIR *dirp;
@@ -196,10 +201,6 @@ int builtin_dir(int count, char* args[] ) {
 }
 
 int builtin_history( int count, char* args[]) {
-
-    char rutaLog[MAXBUF];
-    snprintf(rutaLog, MAXBUF, "%s/.minish_history", getenv("HOME"));
-
     
     int qItems;
     if(count == 1){
@@ -209,8 +210,14 @@ int builtin_history( int count, char* args[]) {
     }
 
     char* items[qItems];
-    char* line = malloc(MAXBUF);
-    FILE* historial = fopen ( rutaLog, "r" );
+    char line[MAXBUF];
+
+    char rutaLog[MAXBUF];
+    snprintf(rutaLog, MAXBUF, "%s/.minish_history", getenv("HOME"));
+    setbuf(stdout,NULL);
+
+    FILE *logHistorial = fopen(rutaLog, "a+b");
+    
 
     int estado = 6;
     int current = 0;
@@ -221,8 +228,10 @@ int builtin_history( int count, char* args[]) {
     case 2:
         //voy a llenarlo circulamente e imprimir de mas viejo a mas nuevo
 
+        printf("tamo here\n");
 
-        while( fgets( line, MAXBUF, historial ) != NULL) {
+        while( fgets(line, MAXBUF, logHistorial) != NULL ) {
+            printf("%s\n", line);
             items[current] = line;
             if(current >= qItems-1) {
                 current = 0;
@@ -254,17 +263,12 @@ int builtin_history( int count, char* args[]) {
         break;
     default:
     {
-        struct builtin_struct *  nodoCd = buscar("history");
-        printf("%s", nodoCd->help_txt);
+        struct builtin_struct *  nodo = buscar("history");
+        printf("%s", nodo->help_txt);
         return 1;
     }
     break;
     }
-}
-
-int printalgo( int count, char** coso  ){
-    printf("entre");
-    return 0;
 }
 
 struct builtin_struct builtin_arr[] = {
@@ -291,60 +295,76 @@ int main( void ) {
     getcwd( cwd, MAXBUF);
 
     snprintf( promptcompleto, MAXBUF, "minish %s > ", cwd );
+    setbuf(stdout,NULL);
 
     char rutaLog[MAXBUF];
     snprintf(rutaLog, MAXBUF, "%s/.minish_history", getenv("HOME"));
+    setbuf(stdout,NULL);
 
-    FILE* log = fopen(rutaLog, "a");
-    if (!log) log = fopen(rutaLog, "w");
-
+    FILE *logHistorial = fopen(rutaLog, "a+b");
 
     while(1) {
 
         write(2, promptcompleto, strlen(promptcompleto));
         read( 0, input, MAXBUF );
 
-        fprintf( log, "%s\n", input);
+        fprintf( logHistorial, "%s", input);
+        fflush(logHistorial);
 
         count = linea2argv(input, args);
-
+    
+        /*
         printf("Cantidad de argumentos: %d\n", count);
 
+        
         int pepe = count;
-
         while(pepe-->0) {
             printf("%s\n", args[pepe]);
         }
         printf("listo\n");
+        */
 
         status = ejecutar(count, args);
-
-        if(status != 0) {
-            int number = errno;
-            printf( "Error al ejecutar: %s\n", strerror(number));
-        }
     }
     return 0;
 }
 
 int ejecutar( int count, char* args[] ) {
     if( isInterno(args[0]) ) {
-        printf("%s es interno\n", args[0]);
+        //printf("%s es interno\n", args[0]);
         return builtin(count, args);
     } else {
         int id = fork();
+        int statusRetorno = 0;
         if(id==0) {
-            execv( args[0], args );
+            execvp( args[0], args );
+            printf("Error corriendo proceso forkeado.\n");
+            return 1;
         } else if(id>0) {
             printf("Comando externo forkeado\n");
-            return 0;
+            int pid = waitpid(id, &statusRetorno, 0);
+            if(pid == -1){
+                printf("Error esperando al proceso hijo.\n");
+                return 1;
+            }
+            if(WIFEXITED(status)==1){
+                int estadoFinal = WEXITSTATUS(statusRetorno);
+                if( estadoFinal == 0 ){
+                    printf("Comando externo terminó exitosamente con status: %d.\n", estadoFinal);
+                    return estadoFinal;
+                }else{
+                    printf("Comando externo terminó con errores, código: %d.\n", estadoFinal);
+                    return estadoFinal;
+                }
         } else if(id<0) {
             int number = errno;
             printf( "Error al forkear: %s\n", strerror(number));
+            return number;
         }
         return 0;
+        }
     }
-
+    return 1;
 }
 
 int isInterno( char* comando ) {
@@ -361,15 +381,11 @@ int isInterno( char* comando ) {
 int builtin( int count, char* args[]  ) {
     struct builtin_struct * pointer = builtin_arr;
     int resultado;
-    printf("afuera del while\n");
     while( pointer->cmd != NULL ) {
         if(strcmp(args[0], pointer->cmd)==0) {
-            printf("encontramos la funcion de nombre %s\n", pointer->cmd);
             resultado = (pointer->func)(count, args);
-            printf("aca fue corrida, resultado %d\n", resultado);
             return resultado;
         }
-        printf("esta funcion no es\n");
         pointer++;
     }
     return 4;
@@ -382,6 +398,7 @@ struct builtin_struct * buscar( char* cmd) {
         if(strcmp(cmd, puntero->cmd) == 0) {
             return puntero;
         }
+        puntero++;
     }
     return NULL;
 }
@@ -390,8 +407,6 @@ int linea2argv( char* input, char* argv[] ) {
     int count = 0;
     char* punteroAComienzo = input;
     char* iterator = input;
-
-
 
     while( *iterator != '\n' && *iterator != '\0' ) {
         if(*iterator != ' ' && *iterator != '\t') {
