@@ -1,8 +1,8 @@
 #include <stdio.h>
+#include <stdio_ext.h>
 #include <stdlib.h>
 #include <string.h>
 #include <dirent.h>
-
 #include "minish.h"
 
 #define MAXARG 100
@@ -208,15 +208,15 @@ int builtin_history( int count, char* args[]) {
     }else{
         qItems = atoi(args[1]);
     }
-
+    printf("%s=%d\n", args[1],  qItems);
     char* items[qItems];
     char line[MAXBUF];
 
     char rutaLog[MAXBUF];
     snprintf(rutaLog, MAXBUF, "%s/.minish_history", getenv("HOME"));
-    setbuf(stdout,NULL);
+    setbuf(stdout, NULL);
 
-    FILE *logHistorial = fopen(rutaLog, "a+b");
+    FILE *logHistorial = fopen(rutaLog, "r");
     
 
     int estado = 6;
@@ -228,11 +228,8 @@ int builtin_history( int count, char* args[]) {
     case 2:
         //voy a llenarlo circulamente e imprimir de mas viejo a mas nuevo
 
-        printf("tamo here\n");
-
         while( fgets(line, MAXBUF, logHistorial) != NULL ) {
-            printf("%s\n", line);
-            items[current] = line;
+            items[current] = strdup(line);
             if(current >= qItems-1) {
                 current = 0;
                 isFull = 1;
@@ -247,14 +244,14 @@ int builtin_history( int count, char* args[]) {
         if(isFull) {
             int toPrint = current;
             do {
-                printf("%s\n", items[toPrint]);
+                printf("%s", items[toPrint]);
                 toPrint = (toPrint >= qItems-1)? 0 : toPrint+1; //vuelvo al comienzo si me paso
             }while(current!=toPrint);
             estado = 0;
         } else { //hay pocos comandos
-            int i = 0;
-            while( items[i] != NULL) {
-                printf("%s\n", items[i]);
+            int i=0;
+            while( i < current ) {
+                printf("%s", items[i]);
                 i++;
             }
             estado = 0;
@@ -298,18 +295,19 @@ int main( void ) {
     setbuf(stdout,NULL);
 
     char rutaLog[MAXBUF];
-    snprintf(rutaLog, MAXBUF, "%s/.minish_history", getenv("HOME"));
+    char* myhomedir = getenv("HOME");
+    snprintf(rutaLog, MAXBUF, "%s/.minish_history", myhomedir);
     setbuf(stdout,NULL);
 
-    FILE *logHistorial = fopen(rutaLog, "a+b");
+    FILE *logHistorial = fopen(rutaLog, "a+");
 
     while(1) {
 
         write(2, promptcompleto, strlen(promptcompleto));
-        read( 0, input, MAXBUF );
+        // read( 0, input, MAXBUF );
+        fgets( input, MAXBUF, stdin );
 
         fprintf( logHistorial, "%s", input);
-        fflush(logHistorial);
 
         count = linea2argv(input, args);
     
@@ -339,7 +337,7 @@ int ejecutar( int count, char* args[] ) {
         if(id==0) {
             execvp( args[0], args );
             printf("Error corriendo proceso forkeado.\n");
-            return 1;
+            exit(1);
         } else if(id>0) {
             printf("Comando externo forkeado\n");
             int pid = waitpid(id, &statusRetorno, 0);
