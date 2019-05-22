@@ -1,3 +1,3 @@
 CFLAGS=-Wall -Werror -g
 
-main: main.c
+main: main.c builtin_mes.c

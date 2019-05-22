@@ -7,6 +7,9 @@
 
 #define MAXARG 100
 
+#define HELP_MES "Muestra calendario de mes actual" 
+
+extern int builtin_mes(int, char**);
 
 struct builtin_struct * buscar( char* cmd);
 
@@ -279,6 +282,7 @@ struct builtin_struct builtin_arr[] = {
     { "help", builtin_help, HELP_HELP },
     { "dir", builtin_dir, HELP_DIR },
     { "history", builtin_history, HELP_HISTORY },
+    { "mes", builtin_mes, HELP_MES},
     { NULL, NULL, NULL }
 };
 
